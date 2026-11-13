@@ -31,7 +31,7 @@ Hệ thống làm việc chung khép kín (All-in-One Private Workspace) đượ
 3. Sao chép lại chuỗi khóa (`tskey-auth-...`).
 
 ### Bước 2: Cấu hình tệp `.env`
-Mở tệp `.env` trong thư mục `workspace/` và điền thông tin Tailscale của bạn:
+Mở tệp `env` điền thông tin Tailscale của bạn và chuyển nó thành `.env`:
 ```env
 TS_HOSTNAME=workspace-hub
 TS_DOMAIN=workspace-hub.ten-tailnet.ts.net
