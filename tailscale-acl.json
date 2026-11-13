@@ -16,9 +16,7 @@
       "dst": [
         "tag:workspace-server:443",
         "tag:workspace-server:8443",
-        "tag:workspace-server:3000",
-        "tag:workspace-server:3001",
-        "tag:workspace-server:9443"
+        "tag:workspace-server:10000"
       ]
     },
     {

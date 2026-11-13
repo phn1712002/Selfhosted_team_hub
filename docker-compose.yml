@@ -277,12 +277,10 @@ services:
     restart: unless-stopped
     environment:
       N8N_PORT: 5678
-      N8N_PROTOCOL: https
-      N8N_HOST: ${TS_DOMAIN}
-      N8N_PATH: /n8n/
-      WEBHOOK_URL: https://${TS_DOMAIN}/n8n/
-      N8N_SECURE_COOKIE: "true"
-      N8N_PROXY_HOPS: "1"
+      N8N_PROTOCOL: http
+      N8N_HOST: 0.0.0.0
+      N8N_SECURE_COOKIE: "false"
+      N8N_PROXY_HOPS: "0"
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       GENERIC_TIMEZONE: Asia/Ho_Chi_Minh
       TZ: Asia/Ho_Chi_Minh

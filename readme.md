@@ -57,7 +57,7 @@ Sau khi container khởi động và kết nối thành công với Tailscale, b
 
 * **Nextcloud:** `https://workspace-hub.ten-tailnet.ts.net`
 * **OnlyOffice:** `https://workspace-hub.ten-tailnet.ts.net:8443`
-* **Authentik (SSO):** `https://workspace-hub.ten-tailnet.ts.net:9443`
-* **Planka (Kanban):** `https://workspace-hub.ten-tailnet.ts.net:3000`
-* **NextChat (AI):** `https://workspace-hub.ten-tailnet.ts.net:3001`
-* **n8n (Automation):** `http://<IP-Tailscale>:5678` *(Chỉ dành cho Admin theo phân quyền ACL)*
+* **Authentik (SSO):** `https://workspace-hub.ten-tailnet.ts.net/authentik`
+* **Planka (Kanban):** `https://workspace-hub.ten-tailnet.ts.net/planka`
+* **NextChat (AI):** `https://workspace-hub.ten-tailnet.ts.net:10000`
+* **n8n (Automation):** `http://<IP-Tailscale>:5678` *(Chỉ dành cho Admin theo phân quyền ACL - truy cập trực tiếp qua IP Tailscale)*
