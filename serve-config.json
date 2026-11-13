@@ -1,0 +1,36 @@
+{
+  "TCP": {
+    "443": { "HTTPS": true },
+    "8443": { "HTTPS": true },
+    "9443": { "HTTPS": true },
+    "3000": { "HTTPS": true },
+    "3001": { "HTTPS": true }
+  },
+  "Web": {
+    "${TS_CERT_DOMAIN}:443": {
+      "Handlers": {
+        "/": { "Proxy": "http://nextcloud:80" }
+      }
+    },
+    "${TS_CERT_DOMAIN}:8443": {
+      "Handlers": {
+        "/": { "Proxy": "http://onlyoffice:80" }
+      }
+    },
+    "${TS_CERT_DOMAIN}:9443": {
+      "Handlers": {
+        "/": { "Proxy": "http://authentik-server:9000" }
+      }
+    },
+    "${TS_CERT_DOMAIN}:3000": {
+      "Handlers": {
+        "/": { "Proxy": "http://planka:1337" }
+      }
+    },
+    "${TS_CERT_DOMAIN}:3001": {
+      "Handlers": {
+        "/": { "Proxy": "http://nextchat:3000" }
+      }
+    }
+  }
+}

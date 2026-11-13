@@ -1,0 +1,240 @@
+networks:
+  workspace_net:
+    driver: bridge
+
+volumes:
+  tailscale_state:
+  authentik_db:
+  authentik_media:
+  nextcloud_data:
+  nextcloud_db:
+  onlyoffice_data:
+  onlyoffice_logs:
+  planka_db:
+  planka_avatars:
+  planka_attachments:
+  n8n_data:
+
+services:
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-gateway
+    hostname: ${TS_HOSTNAME}
+    restart: unless-stopped
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=true
+      - TS_SERVE_CONFIG=/config/serve-config.json
+    volumes:
+      - tailscale_state:/var/lib/tailscale
+      - ./serve-config.json:/config/serve-config.json:ro
+    networks:
+      - workspace_net
+
+  authentik-db:
+    image: postgres:16-alpine
+    container_name: authentik-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: authentik
+      POSTGRES_USER: authentik
+      POSTGRES_PASSWORD: ${AUTHENTIK_PG_PASS}
+    volumes:
+      - authentik_db:/var/lib/postgresql/data
+    networks:
+      - workspace_net
+
+  authentik-redis:
+    image: redis:alpine
+    container_name: authentik-redis
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    networks:
+      - workspace_net
+
+  authentik-server:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik-server
+    restart: unless-stopped
+    command: server
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    volumes:
+      - authentik_media:/media
+    depends_on:
+      - authentik-db
+      - authentik-redis
+    networks:
+      - workspace_net
+
+  authentik-worker:
+    image: ghcr.io/goauthentik/server:latest
+    container_name: authentik-worker
+    restart: unless-stopped
+    command: worker
+    environment:
+      AUTHENTIK_REDIS__HOST: authentik-redis
+      AUTHENTIK_POSTGRESQL__HOST: authentik-db
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASS}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    volumes:
+      - authentik_media:/media
+    depends_on:
+      - authentik-db
+      - authentik-redis
+    networks:
+      - workspace_net
+
+  nextcloud-db:
+    image: mariadb:10.11
+    container_name: nextcloud-db
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    environment:
+      MYSQL_ROOT_PASSWORD: ${NEXTCLOUD_DB_ROOT_PASS}
+      MYSQL_PASSWORD: ${NEXTCLOUD_DB_PASS}
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+    volumes:
+      - nextcloud_db:/var/lib/mysql
+    networks:
+      - workspace_net
+
+  nextcloud-redis:
+    image: redis:alpine
+    container_name: nextcloud-redis
+    restart: unless-stopped
+    networks:
+      - workspace_net
+
+  nextcloud:
+    image: nextcloud:stable
+    container_name: nextcloud
+    restart: unless-stopped
+    environment:
+      MYSQL_PASSWORD: ${NEXTCLOUD_DB_PASS}
+      MYSQL_DATABASE: nextcloud
+      MYSQL_USER: nextcloud
+      MYSQL_HOST: nextcloud-db
+      REDIS_HOST: nextcloud-redis
+      NEXTCLOUD_TRUSTED_DOMAINS: ${TS_DOMAIN}
+      OVERWRITEPROTOCOL: https
+      OVERWRITEHOST: ${TS_DOMAIN}
+    volumes:
+      - nextcloud_data:/var/www/html
+    depends_on:
+      - nextcloud-db
+      - nextcloud-redis
+    networks:
+      - workspace_net
+
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: onlyoffice
+    restart: unless-stopped
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: ${ONLYOFFICE_JWT_SECRET}
+      JWT_HEADER: Authorization
+      JWT_IN_BODY: "true"
+    volumes:
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_logs:/var/log/onlyoffice
+    networks:
+      - workspace_net
+
+  planka-db:
+    image: postgres:16-alpine
+    container_name: planka-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: planka
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PLANKA_PG_PASS}
+    volumes:
+      - planka_db:/var/lib/postgresql/data
+    networks:
+      - workspace_net
+
+  planka:
+    image: ghcr.io/plankanban/planka:latest
+    container_name: planka
+    restart: unless-stopped
+    environment:
+      BASE_URL: https://${TS_DOMAIN}:3000
+      DATABASE_URL: postgresql://postgres:${PLANKA_PG_PASS}@planka-db/planka
+      SECRET_KEY: ${PLANKA_SECRET_KEY}
+      # Bỏ comment các dòng dưới sau khi cấu hình OIDC trên Authentik:
+      # OIDC_ISSUER: https://${TS_DOMAIN}:9443/application/o/planka/
+      # OIDC_CLIENT_ID: planka-client-id
+      # OIDC_CLIENT_SECRET: planka-client-secret
+      # OIDC_SCOPES: openid profile email groups
+      # OIDC_ADMIN_ROLES: project-leads,infra-admin
+      # OIDC_ENFORCED: "true"
+    volumes:
+      - planka_avatars:/app/public/user-avatars
+      - planka_attachments:/app/private/attachments
+    depends_on:
+      - planka-db
+    networks:
+      - workspace_net
+
+  llama-cpp:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    container_name: llama-cpp
+    restart: unless-stopped
+    volumes:
+      - ./models:/models
+    command:
+      - "-m"
+      - "/models/${LLAMA_MODEL_FILE}"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8080"
+      - "-c"
+      - "8192"
+      - "-t"
+      - "4"
+    networks:
+      - workspace_net
+
+  nextchat:
+    image: yidadaa/chatgpt-next-web:latest
+    container_name: nextchat
+    restart: unless-stopped
+    environment:
+      BASE_URL: http://llama-cpp:8080
+      OPENAI_API_KEY: sk-local-llama
+      CODE: ${NEXTCHAT_ACCESS_CODE}
+      HIDE_USER_API_KEY: "1"
+      CUSTOM_MODELS: "-all,+${LLAMA_MODEL_FILE}"
+    depends_on:
+      - llama-cpp
+    networks:
+      - workspace_net
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    network_mode: "service:tailscale"
+    environment:
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_SECURE_COOKIE: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      GENERIC_TIMEZONE: Asia/Ho_Chi_Minh
+      TZ: Asia/Ho_Chi_Minh
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - tailscale

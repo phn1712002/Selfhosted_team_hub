@@ -1,0 +1,32 @@
+{
+  "groups": {
+    "group:admin": ["email-admin@gmail.com"],
+    "group:team": [
+      "email-admin@gmail.com",
+      "nhanvien1@gmail.com"
+    ]
+  },
+  "tagOwners": {
+    "tag:workspace-server": ["group:admin"]
+  },
+  "acls": [
+    {
+      "action": "accept",
+      "src": ["group:team"],
+      "dst": [
+        "tag:workspace-server:443",
+        "tag:workspace-server:8443",
+        "tag:workspace-server:3000",
+        "tag:workspace-server:3001",
+        "tag:workspace-server:9443"
+      ]
+    },
+    {
+      "action": "accept",
+      "src": ["group:admin"],
+      "dst": [
+        "tag:workspace-server:5678"
+      ]
+    }
+  ]
+}

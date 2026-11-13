@@ -1,0 +1,5 @@
+# Bỏ qua toàn bộ file model AI 
+models/*
+
+# Bỏ qua file biến môi trường chứa mật khẩu thật
+.env
