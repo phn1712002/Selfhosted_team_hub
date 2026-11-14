@@ -10,7 +10,7 @@ Hệ thống làm việc chung khép kín (All-in-One Private Workspace) đượ
 4. **Planka:** Bảng phân công công việc trực quan (Kanban Board) dạng Trello, đồng bộ tài khoản qua OIDC.
 5. **Llama.cpp & NextChat:** Trợ lý AI nội bộ chạy model mã nguồn mở (như Qwen2.5 / Llama 3) qua giao diện chat riêng tư, không lộ dữ liệu ra ngoài.
 6. **SurfSense:** AI agent xử lý tài liệu giống NotebookLM, có thể truy cập file từ NextCloud qua WebDAV và xác thực qua Authentik OIDC.
-7. **n8n:** Hệ thống tự động hóa trung tâm (Workflow Automation) dùng để đồng bộ dữ liệu công việc, nhắc lịch và đẩy thông báo xuống Discord.
+7. **n8n:** Hệ thống tự động hóa trung tâm (Workflow Automation) dùng để đồng bộ dữ liệu công việc, nhắc lịch và đẩy thông báo xuống các ứng dụng nhắn tin.
 
 ---
 
