@@ -17,6 +17,7 @@ volumes:
   planka_avatars:
   planka_attachments:
   n8n_data:
+  surfsense_data:
 
 services:
   tailscale:
@@ -286,5 +287,33 @@ services:
       TZ: Asia/Ho_Chi_Minh
     volumes:
       - n8n_data:/home/node/.n8n
+    networks:
+      - workspace_net
+
+  surfsense:
+    image: ghcr.io/modsetter/surfsense:latest
+    container_name: surfsense
+    restart: unless-stopped
+    environment:
+      SURFSENSE_LOCAL_PUBLIC_PORT: 80
+      SURFSENSE_AUTH: none  # Use Authentik for authentication
+      SURFSENSE_ALLOWED_HOSTS: ${TS_DOMAIN}
+      SURFSENSE_TLS: internal  # Use internal TLS for HTTPS
+      SURFSENSE_DOMAIN: ${TS_DOMAIN}
+      SURFSENSE_HTTPS_PORT: 443
+      # NextCloud WebDAV configuration
+      NEXTCLOUD_WEBDAV_URL: https://${TS_DOMAIN}/remote.php/dav/files/${NEXTCLOUD_USER}
+      NEXTCLOUD_USER: ${NEXTCLOUD_USER:-admin}
+      NEXTCLOUD_PASSWORD: ${NEXTCLOUD_PASSWORD}
+      # Authentik OIDC configuration (to be configured in Authentik)
+      AUTHENTIK_OIDC_ISSUER: https://${TS_DOMAIN}/authentik/application/o/surfsense/
+      AUTHENTIK_OIDC_CLIENT_ID: surfsense-client-id
+      AUTHENTIK_OIDC_CLIENT_SECRET: ${SURFSENSE_OIDC_CLIENT_SECRET}
+    volumes:
+      - surfsense_data:/data
+      - nextcloud_data:/nextcloud:ro  # Read-only access to NextCloud data
+    depends_on:
+      - authentik-server
+      - nextcloud
     networks:
       - workspace_net

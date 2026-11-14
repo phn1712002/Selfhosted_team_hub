@@ -9,7 +9,8 @@ Hệ thống làm việc chung khép kín (All-in-One Private Workspace) đượ
 3. **Nextcloud & OnlyOffice:** Lưu trữ file, ghi chú, lịch, họp nhóm (*Nextcloud Talk*) và chỉnh sửa tài liệu văn bản (`.docx`, `.xlsx`, `.pdf`) trực tiếp theo thời gian thực.
 4. **Planka:** Bảng phân công công việc trực quan (Kanban Board) dạng Trello, đồng bộ tài khoản qua OIDC.
 5. **Llama.cpp & NextChat:** Trợ lý AI nội bộ chạy model mã nguồn mở (như Qwen2.5 / Llama 3) qua giao diện chat riêng tư, không lộ dữ liệu ra ngoài.
-6. **n8n:** Hệ thống tự động hóa trung tâm (Workflow Automation) dùng để đồng bộ dữ liệu công việc, nhắc lịch và đẩy thông báo xuống Discord.
+6. **SurfSense:** AI agent xử lý tài liệu giống NotebookLM, có thể truy cập file từ NextCloud qua WebDAV và xác thực qua Authentik OIDC.
+7. **n8n:** Hệ thống tự động hóa trung tâm (Workflow Automation) dùng để đồng bộ dữ liệu công việc, nhắc lịch và đẩy thông báo xuống Discord.
 
 ---
 
@@ -56,8 +57,44 @@ docker compose up -d
 Sau khi container khởi động và kết nối thành công với Tailscale, bạn có thể truy cập qua các tên miền nội bộ `.ts.net`:
 
 * **Nextcloud:** `https://workspace-hub.ten-tailnet.ts.net`
-* **OnlyOffice:** `https://workspace-hub.ten-tailnet.ts.net:8443`
+* **OnlyOffice:** `https://workspace-hub.ten-tailnet.ts.net/onlyoffice`
 * **Authentik (SSO):** `https://workspace-hub.ten-tailnet.ts.net/authentik`
 * **Planka (Kanban):** `https://workspace-hub.ten-tailnet.ts.net/planka`
-* **NextChat (AI):** `https://workspace-hub.ten-tailnet.ts.net:10000`
+* **NextChat (AI):** `https://workspace-hub.ten-tailnet.ts.net/nextchat`
+* **SurfSense (AI Document Agent):** `https://workspace-hub.ten-tailnet.ts.net/surfsense`
 * **n8n (Automation):** `http://<IP-Tailscale>:5678` *(Chỉ dành cho Admin theo phân quyền ACL - truy cập trực tiếp qua IP Tailscale)*
+
+---
+
+## 🔧 Cấu hình Authentik cho SurfSense
+
+Sau khi hệ thống khởi động, bạn cần cấu hình Authentik để SurfSense có thể sử dụng OIDC:
+
+1. Đăng nhập vào Authentik tại `https://workspace-hub.ten-tailnet.ts.net/authentik`
+2. Tạo một Provider mới:
+   - **Type:** OpenID Connect
+   - **Name:** SurfSense
+   - **Client ID:** `surfsense-client-id`
+   - **Client Secret:** Lấy từ biến môi trường `SURFSENSE_OIDC_CLIENT_SECRET`
+   - **Redirect URIs:** `https://workspace-hub.ten-tailnet.ts.net/surfsense/api/auth/callback/oidc`
+
+3. Tạo một Application mới:
+   - **Name:** SurfSense
+   - **Slug:** `surfsense`
+   - **Provider:** Chọn provider SurfSense vừa tạo
+
+4. Gán quyền truy cập cho người dùng cần thiết
+
+---
+
+## 📁 Truy cập file từ NextCloud trong SurfSense
+
+SurfSense đã được cấu hình để truy cập file từ NextCloud qua WebDAV:
+- **WebDAV URL:** `https://workspace-hub.ten-tailnet.ts.net/remote.php/dav/files/{username}`
+- **Username:** `admin` (hoặc username của bạn trong NextCloud)
+- **Password:** Mật khẩu NextCloud của bạn
+
+Trong SurfSense, bạn có thể:
+1. Thêm nguồn từ NextCloud WebDAV
+2. Upload file trực tiếp
+3. Sử dụng AI để nghiên cứu, chuyển đổi và chỉnh sửa tài liệu
